@@ -20,5 +20,5 @@ Use a database to compare various types of housing data and find the best value 
 - **revert**: 撤銷回覆先前的 commit
 
 ## 範例
-
+fix : 將資料庫回傳的異常解決。
 
