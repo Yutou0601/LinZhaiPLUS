@@ -28,7 +28,7 @@ fix : 將資料庫回傳的異常解決。
 ```
 
 ## Unit Test
-**請先在終端輸入，請先確認path有沒有python**
+**請先在終端輸入，請先確認path有沒有python跟git，requirements.txt要先cd進其路徑下**
 ```
 pip install -r requirements.txt
 ```
