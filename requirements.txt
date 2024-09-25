@@ -10,6 +10,6 @@ mysql-connector-python==8.0.30  # MySQL 的數據庫適配器
 pandas==1.5.3             # 數據處理和分析
 
 # 基本操作的庫
-pandas==1.5.2
+pandas==1.5.3
 numpy==1.23.5
 matplotlib==3.6.3
