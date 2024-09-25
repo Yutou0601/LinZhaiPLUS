@@ -7,7 +7,7 @@ title = soup.title.string
 
 articles = soup.find_all('div', 'push')
 
-with open('movie_message.txt','w') as f:
+with open('mmessage.txt','w') as f:
     f.write("文章標題: " + title + "\n\n")
     print("文章標題: " + title + "\n\n")
     for article in articles:
