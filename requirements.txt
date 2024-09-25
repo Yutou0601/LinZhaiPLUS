@@ -8,7 +8,6 @@ pyppeteer==1.0.2               # Headless 瀏覽器（基於 Puppeteer 的 Pytho
 aiohttp==3.8.3                 # 支持異步請求的 HTTP 客戶端
 twisted==22.10.0               # Scrapy 依賴的異步框架，用於爬蟲
 fake-useragent==1.2.0          # 生成隨機的 User-Agent 字符串
-captcha_solver==0.3.6          # 解決網站上的驗證碼（可能需要特定服務）
 tqdm==4.64.0                   # 進度條，顯示爬取進度
 
 # SQL 相關庫
