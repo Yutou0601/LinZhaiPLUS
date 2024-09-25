@@ -1,15 +1,33 @@
 # 爬蟲相關庫
-requests==2.28.1
-beautifulsoup4==4.12.2
-lxml==4.9.2
+requests==2.28.1               # 發送 HTTP 請求
+beautifulsoup4==4.12.2         # 網頁解析
+lxml==4.9.2                    # 高效的 XML 和 HTML 解析器
+scrapy==2.7.0                  # 強大的網頁爬取框架
+selenium==4.4.3                # 瀏覽器自動化工具，用於動態頁面爬取
+pyppeteer==1.0.2               # Headless 瀏覽器（基於 Puppeteer 的 Python 實現）
+aiohttp==3.8.3                 # 支持異步請求的 HTTP 客戶端
+twisted==22.10.0               # Scrapy 依賴的異步框架，用於爬蟲
+fake-useragent==1.2.0          # 生成隨機的 User-Agent 字符串
+captcha_solver==0.3.6          # 解決網站上的驗證碼（可能需要特定服務）
+tqdm==4.64.0                   # 進度條，顯示爬取進度
 
 # SQL 相關庫
-sqlalchemy==2.0.0
-psycopg2==2.9.3           # PostgreSQL 的數據庫適配器
-mysql-connector-python==8.0.30  # MySQL 的數據庫適配器
-pandas==1.5.3             # 數據處理和分析
+sqlalchemy==2.0.0              # SQLAlchemy 用於 ORM 和 SQL 連接
+psycopg2==2.9.3                # PostgreSQL 的數據庫適配器
+mysql-connector-python==8.0.30 # MySQL 的數據庫適配器
+pymysql==1.0.3                 # 純 Python 實現的 MySQL 連接器
+sqlite==3.36.0                 # SQLite 資料庫
+pyodbc==4.0.35                 # ODBC 驅動，用於連接多種 SQL 資料庫
+alembic==1.7.7                 # 用於 SQLAlchemy 的資料庫遷移工具
+pandas==1.5.3                  # 數據處理和分析
 
 # 基本操作的庫
-pandas==1.5.3
-numpy==1.23.5
-matplotlib==3.6.3
+numpy==1.23.5                  # 數學運算與數據分析
+matplotlib==3.6.3              # 數據可視化
+seaborn==0.12.2                # 基於 matplotlib 的高級數據可視化庫
+scipy==1.10.0                  # 科學計算庫，包括數值整合、優化等
+statsmodels==0.13.5            # 統計模型和計量經濟學工具
+openpyxl==3.0.10               # 用於讀取和寫入 Excel 檔案
+xlrd==2.0.1                    # 用於讀取 Excel 檔案（.xls 格式）
+pyarrow==9.0.0                 # Apache Arrow 的 Python 實現，用於高效的數據處理
+joblib==1.2.0                  # 用於輕鬆保存和加載 Python 對象，特別是大型數據
