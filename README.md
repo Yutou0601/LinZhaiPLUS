@@ -8,7 +8,7 @@ Use a database to compare various types of housing data and find the best value 
 ## 提交訊息格式
 
 ## 提交類型
-
+```
 - **feat**: 新增或修改功能（feature）
 - **fix**: 修補 bug（bug fix）
 - **docs**: 文件（documentation）
@@ -18,7 +18,11 @@ Use a database to compare various types of housing data and find the best value 
 - **test**: 增加測試（when adding missing tests）
 - **chore**: maintain，不影響程式碼運行，建構程序或輔助工具的變動，例如修改 config、Grunt Task 任務管理工具
 - **revert**: 撤銷回覆先前的 commit
+```
 
 ## 範例
 fix : 將資料庫回傳的異常解決。
+
+## Unit Test
+**pip install -r requirements.txt**
 
