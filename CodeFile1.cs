@@ -2,6 +2,7 @@
 using IronPython.Hosting;
 using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
+using System.IO;
 
 namespace CodeF
 {
@@ -11,19 +12,24 @@ namespace CodeF
         {
             var engine = Python.CreateEngine();
 
+            // 使用相對路徑取得專案根目錄
+            string relativePath = @"DatabaseNetwork\Test_GUI_1\TestIPyProject";
+            string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativePath);
+
+            // 設置 Python 模組路徑
             var searchPaths = engine.GetSearchPaths();
-            searchPaths.Add(@"C:\Users\user\Desktop\DatabaseNetwork\Test_GUI_1\TestIPyProject\");
+            searchPaths.Add(fullPath);
             engine.SetSearchPaths(searchPaths);
 
             var scope = engine.CreateScope();
             scope.SetVariable("x", 10);
 
-            
-            var source = engine.CreateScriptSourceFromFile(@"C:\Users\user\Desktop\DatabaseNetwork\Test_GUI_1\TestIPyProject\pyModule.py");
+            // 使用相對路徑指定 Python 文件
+            string scriptFile = Path.Combine(fullPath, "pyModule.py");
+            var source = engine.CreateScriptSourceFromFile(scriptFile);
 
             var compilation = source.Compile();
-            var result = compilation.Execute(scope);//Execute Python File 
-
+            var result = compilation.Execute(scope); // Execute Python File 
 
             /*
             foreach(var item in scope.GetVariableNames( )) {
@@ -36,7 +42,6 @@ namespace CodeF
             */
 
             Console.ReadLine();
-
         }
     }
 }
