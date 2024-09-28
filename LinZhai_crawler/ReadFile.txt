@@ -21,3 +21,6 @@ By - White Fox
     集合 :
     view-source:https://www.rakuya.com.tw/sell/result?zipcode=802&typecode=R1&sort=101
     應該是 在 </section> 1727行那邊
+
+結果報告 :
+    早餐吃甚麼?
