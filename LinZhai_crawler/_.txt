@@ -1,0 +1,28 @@
+捕獲範例 : 
+https://www.rakuya.com.tw/sell_item/info?ehid=04cd44217495887&from=list_regular
+window.tmpDataLayer = {"itemListData":[],
+"itemData":{
+"item_name":"成德國中一樓角店",
+"item_id":"04cd44217495887",
+"item_brand":"住商不動產",
+"item_category":"台北市",
+"item_category2":"115",
+"item_category3":"",
+"item_category4":"price3000",
+"item_category5":"店面",
+"item_variant":25.96,
+"age":46.7,
+"price":26880000,
+"bedrooms":0,
+"affiliation":"2495",
+"object_tag":"邊間,免爬樓梯,大面寬",
+"object_type3":"中古屋",
+"object_main_size":25.96,
+"object_floor":1,
+"object_upload_time":"2023-03-31",
+"object_update_time":"2024-09-20",
+"object_mark":"降價",
+"object_group_id":"rakuya\/21749588",
+"object_member_brand":"住商不動產",
+"object_layout":"有格局圖"},
+"searchData":[]};
