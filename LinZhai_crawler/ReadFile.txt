@@ -1,0 +1,26 @@
+功能開發日誌 1-1
+By - White Fox
+
+主功能 : 
+    售屋網站資訊爬蟲
+
+使用套件 :   
+    BeautifulSoup 解讀html
+    requests      發請求
+    re            正則表達式讀取js
+
+目標捕獲網站 :
+    樂屋網 :  https://www.rakuya.com.tw/
+
+    測試集 :
+    '''
+    https://www.rakuya.com.tw/sell_item/info?ehid=098358270717704&from=list_regular
+    https://www.rakuya.com.tw/sell_item/info?ehid=00b118225976043&from=list_regular
+    '''
+
+    集合 :
+    view-source:https://www.rakuya.com.tw/sell/result?zipcode=802&typecode=R1&sort=101
+    應該是 在 </section> 1727行那邊
+
+結果報告 :
+    早餐吃甚麼?
