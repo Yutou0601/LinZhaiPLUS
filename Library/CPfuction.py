@@ -1,7 +1,8 @@
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 import numpy
-
+import matplotlib.pyplot
+from mpl_toolkits.mplot3d import Axes3D
 
 def CostPerformanceRate(data, xInput, yInput, zInput):
 
@@ -13,6 +14,38 @@ def CostPerformanceRate(data, xInput, yInput, zInput):
     z=model.predict(PolynomialFeatures(degree=3).fit_transform([[xInput, yInput]]))[0]
     rate=zInput/z
     return rate
+
+def drawCostPerformance(data):
+    #=========
+    degree=3
+    resolution=200
+    #=========
+
+    data = numpy.array(data)
+    X = data[:, :2]
+    Z = data[:, 2]
+
+    poly = PolynomialFeatures(degree=degree)
+    X_poly = poly.fit_transform(X)
+    model = LinearRegression().fit(X_poly, Z)
+
+    x_range = numpy.linspace(X[:, 0].min(), X[:, 0].max(), resolution)
+    y_range = numpy.linspace(X[:, 1].min(), X[:, 1].max(), resolution)
+    X_grid, Y_grid = numpy.meshgrid(x_range, y_range)
+    Z_grid = model.predict(poly.transform(numpy.c_[X_grid.ravel(), Y_grid.ravel()]))
+    Z_grid = Z_grid.reshape(X_grid.shape)
+
+    fig = matplotlib.pyplot.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(X[:, 0], X[:, 1], Z, color='r')
+    surf = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap='viridis', edgecolor='none', alpha=0.8)
+
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('Price(millian)')
+    matplotlib.pyplot.title('PriceMap')
+    matplotlib.pyplot.show()
+    
 
 '''
 #test data
@@ -94,4 +127,6 @@ data=[
 ]
 CPrate=CostPerformanceRate(data, 500, 500, 5)
 print(CPrate)
+
+drawCostPerformance(data)
 '''
