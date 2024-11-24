@@ -1,5 +1,6 @@
 # house_price_prediction.py
 
+import sys
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -190,3 +191,23 @@ plt.show()
 # 10. 可视化更新后的决策树（可选）
 # 例如，将文字颜色设置为红色
 # rf_model.visualize_tree(X.columns, tree_index=0, text_color='red')
+
+def main():
+    # 获取命令行参数
+    feature1 = sys.argv[1]
+    feature2 = sys.argv[2]
+    # 将参数转换为合适的类型
+    feature1 = float(feature1)
+    feature2 = float(feature2)
+
+    # 加载模型并进行预测
+    # 您需要在脚本中添加代码，以根据输入特征进行预测
+
+    # 假设预测结果存储在变量 prediction
+    prediction = 123456.78  # 示例结果
+
+    # 将结果输出到标准输出
+    print(prediction)
+
+if __name__ == "__main__":
+    main()
