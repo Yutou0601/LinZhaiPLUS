@@ -47,7 +47,7 @@ def drawCostPerformance(data):
     matplotlib.pyplot.show()
     
 
-'''
+
 #test data
 data=[
     (239, 837, 6),
@@ -129,4 +129,3 @@ CPrate=CostPerformanceRate(data, 500, 500, 5)
 print(CPrate)
 
 drawCostPerformance(data)
-'''
