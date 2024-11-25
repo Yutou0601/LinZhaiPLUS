@@ -7,6 +7,12 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
 
+# 定義瀏覽器標頭以模擬真實用戶
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)'
+                  ' Chrome/91.0.4472.124 Safari/537.36'
+}
+
 # 定義房屋資料類別
 class HouseData:
     def __init__(self, id, name, price, size, age, floor, location, tags):
@@ -35,10 +41,12 @@ class HouseData:
 def fetch_house_links(base_url, max_pages=1):
     house_links = []
     for i in range(1, max_pages + 1):
-        url = base_url.replace('i', str(i))
-        response = requests.get(url)
-        if response.status_code != 200:
-            print(f"第 {i} 頁加載失敗，狀態碼: {response.status_code}")
+        url = base_url.format(i)
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"第 {i} 頁加載失敗，錯誤: {e}")
             continue
         soup = BeautifulSoup(response.content, 'html.parser')
         links = soup.find_all('a', href=re.compile(r'/sell_item/info\?ehid=\w+'))
@@ -66,11 +74,10 @@ def filter_existing_links(house_links, filename='House_Rent_Info.csv'):
     filtered_links = [link for link in house_links if re.search(r'ehid=(\w+)', link).group(1) not in existing_ids]
     return filtered_links
 
-
 # 從房屋詳細資訊頁面提取所需資訊
 def fetch_house_data(house_url):
     try:
-        response = requests.get(house_url)
+        response = requests.get(house_url, headers=headers)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"無法訪問 {house_url}，錯誤: {e}")
@@ -170,11 +177,10 @@ def update_csv(house_data, filename='House_Rent_Info.csv'):
     df.to_csv(file_path, index=False, encoding='utf-8-sig')
     print(f"數據已保存至 {file_path}")
 
-
 # 主程式
 if __name__ == "__main__":
-    BASE_URL = "https://www.rakuya.com.tw/sell/result?city=15&sort=11&page=i"
-    TOTAL_PAGES = 400  # 爬取頁數
+    BASE_URL = "https://www.rakuya.com.tw/sell/result?city=15&sort=11&page={}"
+    TOTAL_PAGES = 1  # 爬取頁數
     house_links = fetch_house_links(BASE_URL, max_pages=TOTAL_PAGES)
     print(f"共找到 {len(house_links)} 個房屋連結。")
 
