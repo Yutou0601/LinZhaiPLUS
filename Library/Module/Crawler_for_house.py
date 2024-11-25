@@ -174,7 +174,7 @@ def update_csv(house_data, filename='House_Rent_Info.csv'):
 # 主程式
 if __name__ == "__main__":
     BASE_URL = "https://www.rakuya.com.tw/sell/result?city=15&sort=11&page=i"
-    TOTAL_PAGES = 100  # 爬取頁數
+    TOTAL_PAGES = 400  # 爬取頁數
     house_links = fetch_house_links(BASE_URL, max_pages=TOTAL_PAGES)
     print(f"共找到 {len(house_links)} 個房屋連結。")
 

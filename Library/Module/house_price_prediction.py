@@ -73,8 +73,8 @@ data['Floor'] = data['Floor'].fillna(data['Floor'].median())
 data['Age'] = data['Age'].fillna(data['Age'].median())
 
 # 去除價格的異常值
-# 假設合理的價格範圍為 50 萬到 1 億
-data = data[(data['Price'] >= 500000) & (data['Price'] <= 100000000)]
+# 假設合理的價格範圍為 50 萬到 1.2 億
+data = data[(data['Price'] >= 500000) & (data['Price'] <= 120000000)]
 
 # 對價格進行對數變換
 data['Price'] = np.log1p(data['Price'])
