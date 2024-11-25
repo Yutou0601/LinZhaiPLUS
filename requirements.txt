@@ -26,3 +26,4 @@ openpyxl==3.0.10
 xlrd==2.0.1                   
 pyarrow==9.0.0                 
 joblib==1.2.0   
+seaborn==0.13.2
