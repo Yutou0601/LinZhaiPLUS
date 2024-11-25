@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HousePricePredictionApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b26161c1d8fd8bfd3b92f6d5230d7eab71667eed")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+04f636c8ccce873f371cf638398b595b140b020f")]
 [assembly: System.Reflection.AssemblyProductAttribute("HousePricePredictionApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HousePricePredictionApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
