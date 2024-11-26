@@ -1,27 +1,111 @@
-# house_price_prediction_improved.py
+# house_price_prediction.py
 
 import sys
 import os
 import pandas as pd
 import numpy as np
 import json
-from sklearn.model_selection import train_test_split, GridSearchCV, KFold, cross_val_score
+from sklearn.model_selection import train_test_split, GridSearchCV, KFold, cross_val_score, cross_val_predict
 from sklearn.ensemble import RandomForestRegressor
-from sklearn import tree
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import StandardScaler
+from xgboost import XGBRegressor
+import warnings
 
 # 忽略警告
-import warnings
 warnings.filterwarnings('ignore')
 
 # 1. 載入並預處理資料集
 current_dir = os.path.dirname(os.path.abspath(__file__))
-csv_path = os.path.join(current_dir, 'House_Rent_Info.csv')
-data = pd.read_csv(csv_path)
+house_rent_csv_path = os.path.join(current_dir, 'House_Rent_Info.csv')
+weight_csv_path = os.path.join(current_dir, 'Taipei_town_weight.csv')
 
-# 處理 'Tags' 欄位，提取關鍵字並創建二元特徵
+# 讀取主要資料集
+data = pd.read_csv(house_rent_csv_path)
+
+# 顯示資料集的前幾行和欄位名稱以進行調試
+print("House_Rent_Info.csv 的前幾行：")
+print(data.head())
+print("\nHouse_Rent_Info.csv 的欄位名稱：")
+print(data.columns.tolist())
+
+# 2. 檢查 'District' 和 'District_Index' 是否存在，並去除多餘空格
+data.columns = data.columns.str.strip()
+if 'District' not in data.columns or 'District_Index' not in data.columns:
+    raise KeyError("CSV 檔案中缺少 'District' 或 'District_Index' 欄位。請確認檔案格式正確。")
+
+# 3. 確保重新命名成功
+data.rename(columns={'District': '區', 'District_Index': '區_編號'}, inplace=True)
+
+# 驗證欄位是否已正確重新命名
+print("\n重新命名後的欄位名稱：")
+print(data.columns.tolist())
+
+if '區' not in data.columns or '區_編號' not in data.columns:
+    raise KeyError("重新命名後的欄位 '區' 或 '區_編號' 不存在。請確認重新命名步驟正確。")
+
+# 4. 排除 '區_編號' 為 0 的資料（未知區域）
+initial_row_count = data.shape[0]
+data = data[data['區_編號'] != 0]
+cleaned_row_count = data.shape[0]
+rows_dropped = initial_row_count - cleaned_row_count
+print(f"\n已排除 {rows_dropped} 筆未知區域的資料。")
+
+# 5. 標準化 '縣市' 名稱：將 '臺' 替換為 '台' 並移除所有空格
+data['縣市'] = data['Location'].str.replace('臺', '台').str.replace(' ', '')
+data['區'] = data['區'].str.replace(' ', '')  # 移除 '區' 欄位中的空格
+print("已標準化 '縣市' 和 '區' 名稱。")
+
+# 6. 顯示更新後的資料集前幾行以確認
+print("\n更新後資料集的前幾行：")
+print(data.head())
+
+# 7. 載入台北市各區域的權重資料
+weight_data = pd.read_csv(weight_csv_path)
+
+# 顯示權重資料集的前幾行和欄位名稱以進行調試
+print("\nTaipei_town_weight.csv 的前幾行：")
+print(weight_data.head())
+print("\nTaipei_town_weight.csv 的欄位名稱：")
+print(weight_data.columns.tolist())
+
+# 8. 移除 '總計' 行，因為它不對應任何具體區域
+weight_data = weight_data[weight_data['區'] != '總計']
+print("\n移除 '總計' 行後的 Taipei_town_weight.csv：")
+print(weight_data.head())
+
+# 確保 '縣市' 和 '區' 欄位的名稱一致，以便合併
+if '縣市' not in weight_data.columns or '區' not in weight_data.columns:
+    raise ValueError("權重資料集中必須包含 '縣市' 和 '區' 欄位。")
+
+# 9. 合併主資料集與權重資料集
+data = pd.merge(data, weight_data, on=['縣市', '區'], how='left')
+
+# 顯示合併後的資料集前幾行以確認合併是否成功
+print("\n合併後資料集的前幾行：")
+print(data.head())
+
+# 10. 處理缺失的權重值和顏色值
+# 因為已排除 '區_編號' == 0，理論上應無缺失值
+# 但為保險起見，仍進行填補
+data['權重'] = data['權重'].fillna(data['權重'].median())
+data['顏色'] = data['顏色'].fillna('無色')
+print("已填補缺失的 '權重' 和 '顏色' 值。")
+
+# 11. 將 '顏色' 映射到數值，以反映其優先級
+color_mapping = {
+    '紅色': 500,   # 核心市區或高密度商業區
+    '橙色': 400,   # 次市區
+    '黃色': 300,   # 人口密度適中，基礎設施完善
+    '綠色': 200,   # 普通住宅區
+    '無色': 100    # 偏遠但有一定基礎設施
+}
+data['顏色_數值'] = data['顏色'].map(color_mapping).fillna(0).astype(int)
+print("已將 '顏色' 映射為數值。")
+
+# 12. 處理 'Tags' 欄位，提取關鍵字並創建二元特徵
 # 提取所有唯一的標籤
 unique_tags = set()
 
@@ -65,7 +149,6 @@ tag_translation = {
     # 如有其他標籤，請在此添加
 }
 
-
 # 將中文標籤轉換為英文標籤
 data['Tags_English'] = data['Tags'].apply(
     lambda x: ','.join([tag_translation.get(tag.strip(), tag.strip()) for tag in x.split(',')]) if isinstance(x, str) else x
@@ -85,18 +168,22 @@ for tag in unique_tags_english:
     tag_counts[tag] = count
 
 # 設定出現次數的閾值，僅保留高頻標籤
-threshold = 70  # 根據實際情況調整
+threshold = 30  # 根據實際情況調整
 selected_tags = [tag for tag, count in tag_counts.items() if count >= threshold]
+
+print(f"\n選定的高頻標籤數量：{len(selected_tags)}")
+print(f"選定的高頻標籤：{selected_tags}")
 
 # 為每個選定的標籤創建一個新的二元特徵欄位
 for tag in selected_tags:
     col_name = 'tag_' + tag.replace(' ', '_')
     data[col_name] = data['Tags_English'].apply(lambda x: int(tag in x) if isinstance(x, str) else 0)
 
-# 刪除不需要的欄位
-data = data.drop(['ID', 'Name', 'Location', 'Tags', 'Tags_English'], axis=1)
+# 13. 刪除不需要的欄位
+data = data.drop(['ID', 'Name', 'Location', 'Tags', 'Tags_English', '顏色'], axis=1)
+print("已刪除不需要的欄位。")
 
-# 處理數值型特徵
+# 14. 處理數值型特徵
 # 確保 'Floor' 和 'Age' 欄位為數值型
 data['Floor'] = pd.to_numeric(data['Floor'], errors='coerce')
 data['Age'] = pd.to_numeric(data['Age'], errors='coerce')
@@ -108,32 +195,47 @@ data['Age'] = data['Age'].fillna(data['Age'].median())
 # 去除價格的異常值
 # 假設合理的價格範圍為 50 萬到 1.5 億
 data = data[(data['Price'] >= 500000) & (data['Price'] <= 150000000)]
+print("已去除價格的異常值。")
 
 # 對價格進行對數變換
 data['Price'] = np.log1p(data['Price'])
+print("已對價格進行對數變換。")
 
-# 2. 定義特徵矩陣 X 和目標變量 y
-# 選擇需要的特徵
-feature_columns = ['Size', 'Age', 'Floor'] + ['tag_' + tag.replace(' ', '_') for tag in selected_tags]
-X = data[feature_columns]
-y = data['Price']
-
-# 保存特徵名稱以供後續使用
-feature_names = X.columns.tolist()
-
-# 特徵標準化
-from sklearn.preprocessing import StandardScaler
-
+# 15. 定義特徵矩陣 X 和目標變量 y
+feature_columns = ['權重', '顏色_數值', 'Size', 'Age', 'Floor'] + ['tag_' + tag.replace(' ', '_') for tag in selected_tags]
+# 16. 特徵標準化
 scaler = StandardScaler()
-X[['Size', 'Age', 'Floor']] = scaler.fit_transform(X[['Size', 'Age', 'Floor']])
+# 標準化所有數值型特徵，包括 '權重' 和 '顏色_數值'
+data[['權重', '顏色_數值', 'Size', 'Age', 'Floor']] = scaler.fit_transform(data[['權重', '顏色_數值', 'Size', 'Age', 'Floor']])
+print("已對數值型特徵進行標準化。")
 
-# 3. 使用交叉驗證評估模型
-from sklearn.model_selection import cross_val_predict
+# 17. 創建特徵交互（增加權重影響力）
+data['Size_Weight'] = data['Size'] * data['權重']
+feature_columns.append('Size_Weight')
+print("已創建 'Size_Weight' 特徵。")
 
-# 5-fold 交叉驗證
+# 18. 刪除包含 NaN 的行
+initial_row_count = data.shape[0]
+data_clean = data.dropna(subset=feature_columns + ['Price'])
+cleaned_row_count = data_clean.shape[0]
+rows_dropped = initial_row_count - cleaned_row_count
+print(f"\n已刪除 {rows_dropped} 筆包含 NaN 的資料。")
+
+# 19. 定義特徵矩陣 X 和目標變量 y（在清理後的資料上）
+X = data_clean[feature_columns]
+y = data_clean['Price']
+
+# 確認特徵矩陣 X 是否包含 NaN
+if X.isnull().values.any():
+    print("特徵矩陣 X 包含 NaN 值。請檢查資料處理步驟。")
+    sys.exit(1)
+else:
+    print("特徵矩陣 X 不包含 NaN 值。")
+
+# 20. 定義交叉驗證
 cv = KFold(n_splits=5, shuffle=True, random_state=42)
 
-# 4. 開發者介面類，用於超參數調整和模型分析
+# 21. 定義 RandomForestModel 類，用於超參數調整和模型分析
 class RandomForestModel:
     def __init__(self, **kwargs):
         # 預設超參數
@@ -231,13 +333,13 @@ class RandomForestModel:
         self.params = grid_search.best_params_
         print("最佳參數：", self.params)
         
-    def cross_validate(self, X, y, cv):
+    def cross_validate_model(self, X, y, cv):
         scores = cross_val_score(self.model, X, y, cv=cv, scoring='neg_mean_squared_error', n_jobs=-1)
         rmse_scores = np.sqrt(-scores)
         print(f"交叉驗證 RMSE: {rmse_scores.mean()} ± {rmse_scores.std()}")
         return rmse_scores
 
-# 5. 實例化並訓練模型
+# 22. 實例化並訓練模型
 rf_model = RandomForestModel()
 
 # 顯示當前超參數
@@ -245,12 +347,12 @@ rf_model.display_params()
 
 # 進行交叉驗證
 print("\n進行初始模型的交叉驗證...")
-rf_model.cross_validate(X, y, cv)
+rf_model.cross_validate_model(X, y, cv)
 
 # 訓練模型
 rf_model.train(X, y)
 
-# 6. 使用交叉驗證預測並評估模型
+# 23. 使用交叉驗證預測並評估模型
 predictions_log = cross_val_predict(rf_model.model, X, y, cv=cv, n_jobs=-1)
 predictions = np.expm1(predictions_log)
 y_exp = np.expm1(y)
@@ -288,18 +390,18 @@ plt.title('Actual Price vs Predicted Price Comparison')
 plt.legend()
 plt.show()
 
-# 7. 模型分析
+# 24. 模型分析
 # 顯示特徵重要性
 print("\n特徵重要性:")
 rf_model.feature_importance(X.columns)
 
 # 繪製特徵重要性圖表
-rf_model.plot_feature_importance(feature_names)
+rf_model.plot_feature_importance(feature_columns)
 
 # 殘差分析
 rf_model.residual_analysis(y, predictions_log)
 
-# 8. 使用超參數調整提高模型性能
+# 25. 使用超參數調整提高模型性能
 print("\n正在進行超參數調整，可能需要一些時間...")
 
 rf_model.hyperparameter_tuning(X, y)
@@ -344,9 +446,7 @@ plt.show()
 # 重新進行殘差分析
 rf_model.residual_analysis(y, predictions_log)
 
-# 9. 嘗試使用 XGBoost 模型
-from xgboost import XGBRegressor
-
+# 26. 嘗試使用 XGBoost 模型
 class XGBoostModel:
     def __init__(self, **kwargs):
         # 預設超參數
@@ -393,13 +493,13 @@ class XGBoostModel:
         self.params = grid_search.best_params_
         print("最佳參數：", self.params)
         
-    def cross_validate(self, X, y, cv):
+    def cross_validate_model(self, X, y, cv):
         scores = cross_val_score(self.model, X, y, cv=cv, scoring='neg_mean_squared_error', n_jobs=-1)
         rmse_scores = np.sqrt(-scores)
         print(f"XGBoost 交叉驗證 RMSE: {rmse_scores.mean()} ± {rmse_scores.std()}")
         return rmse_scores
 
-# 實例化 XGBoost 模型
+# 27. 實例化 XGBoost 模型
 xgb_model = XGBoostModel()
 
 # 顯示當前超參數
@@ -407,7 +507,7 @@ xgb_model.display_params()
 
 # 進行交叉驗證
 print("\n進行 XGBoost 模型的交叉驗證...")
-xgb_model.cross_validate(X, y, cv)
+xgb_model.cross_validate_model(X, y, cv)
 
 # 訓練模型
 xgb_model.train(X, y)
@@ -415,6 +515,7 @@ xgb_model.train(X, y)
 # 使用交叉驗證預測並評估模型
 predictions_log_xgb = cross_val_predict(xgb_model.model, X, y, cv=cv, n_jobs=-1)
 predictions_xgb = np.expm1(predictions_log_xgb)
+# y_exp 已經定義
 
 # 評估模型性能
 mse_xgb = mean_squared_error(y_exp, predictions_xgb)
@@ -434,47 +535,85 @@ plt.title('Actual Price vs Predicted Price (XGBoost)')
 plt.plot([y_exp.min(), y_exp.max()], [y_exp.min(), y_exp.max()], 'r--')
 plt.show()
 
-# 10. 定義主函數以供外部調用（如 ASP.NET 網站）
+# 28. 定義主函數以供外部調用（如 ASP.NET 網站）
 def main():
     import sys
     import json
 
     # 需要的特徵列表
-    input_feature_list = ['Size', 'Age', 'Floor'] + ['tag_' + tag.replace(' ', '_') for tag in selected_tags]
+    # 現在包括 '縣市' 和 '區' 以便獲取 '權重' 和 '顏色_數值'
+    input_feature_list = ['縣市', '區', 'Size', 'Age', 'Floor'] + ['tag_' + tag.replace(' ', '_') for tag in selected_tags]
     expected_args = len(input_feature_list) + 1  # 加上腳本名稱
 
     if len(sys.argv) != expected_args:
-        print(f"用法: python {sys.argv[0]} " + " ".join(input_feature_list))
+        print(f"用法: python {sys.argv[0]} 縣市 區 Size Age Floor " + " ".join(['tag_' + tag.replace(' ', '_') for tag in selected_tags]))
         sys.exit(1)
 
     # 從命令行獲取特徵值
     input_values = {}
     for i, feature in enumerate(input_feature_list, start=1):
         if 'tag_' in feature:
-            input_values[feature] = int(sys.argv[i])
+            try:
+                input_values[feature] = int(sys.argv[i])
+                if input_values[feature] not in [0, 1]:
+                    raise ValueError
+            except ValueError:
+                print(f"錯誤: 特徵 '{feature}' 必須是整數（0 或 1）。")
+                sys.exit(1)
+        elif feature in ['Size', 'Age', 'Floor']:
+            try:
+                input_values[feature] = float(sys.argv[i])
+            except ValueError:
+                print(f"錯誤: 特徵 '{feature}' 必須是浮點數。")
+                sys.exit(1)
         else:
-            input_values[feature] = float(sys.argv[i])
+            input_values[feature] = sys.argv[i]
 
     # 初始化輸入特徵字典
     input_features = dict.fromkeys(feature_names, 0)
 
+    # 提取 '縣市' 和 '區' 來獲取 '權重' 和 '顏色_數值'
+    input_city = input_values['縣市']
+    input_district = input_values['區']
+
+    # 標準化 '縣市' 名稱：將 '臺' 替換為 '台' 並移除空格
+    input_city = input_city.replace('臺', '台').replace(' ', '')
+    input_district = input_district.replace(' ', '')  # 移除 '區' 欄位中的空格
+
+    # 獲取對應的權重和顏色數值
+    weight_record = weight_data[(weight_data['縣市'] == input_city) & (weight_data['區'] == input_district)]
+    if not weight_record.empty:
+        input_weight = weight_record['權重'].values[0]
+        input_color = color_mapping.get(weight_record['顏色'].values[0], 0)
+    else:
+        # 如果找不到對應的區域，提示錯誤
+        print(f"錯誤: 找不到縣市 '{input_city}' 和區 '{input_district}' 的權重和顏色資料。")
+        sys.exit(1)
+
     # 更新輸入特徵字典
+    input_features['權重'] = input_weight
+    input_features['顏色_數值'] = input_color
+
+    # 更新其他特徵
     for key, value in input_values.items():
-        if key in input_features:
+        if key not in ['縣市', '區']:
             input_features[key] = value
 
     # 對數值型特徵進行標準化
-    numeric_features = ['Size', 'Age', 'Floor']
+    numeric_features = ['權重', '顏色_數值', 'Size', 'Age', 'Floor']
     input_features_numeric = np.array([[input_features[feature] for feature in numeric_features]])
     input_features_scaled = scaler.transform(input_features_numeric)[0]
     for i, feature in enumerate(numeric_features):
         input_features[feature] = input_features_scaled[i]
 
+    # 創建特徵交互 'Size_Weight'
+    input_features['Size_Weight'] = input_features['Size'] * input_features['權重']
+
     # 創建 DataFrame
     input_df = pd.DataFrame([input_features])
 
     # 確保欄位的順序正確
-    input_df = input_df[feature_names]
+    input_df = input_df[feature_columns]
 
     # 進行預測（使用調整後的隨機森林模型）
     prediction_log = rf_model.predict(input_df)[0]
