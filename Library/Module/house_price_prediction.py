@@ -85,7 +85,7 @@ for tag in unique_tags_english:
     tag_counts[tag] = count
 
 # 設定出現次數的閾值，僅保留高頻標籤
-threshold = 50  # 根據實際情況調整
+threshold = 70  # 根據實際情況調整
 selected_tags = [tag for tag, count in tag_counts.items() if count >= threshold]
 
 # 為每個選定的標籤創建一個新的二元特徵欄位
@@ -106,8 +106,8 @@ data['Floor'] = data['Floor'].fillna(data['Floor'].median())
 data['Age'] = data['Age'].fillna(data['Age'].median())
 
 # 去除價格的異常值
-# 假設合理的價格範圍為 50 萬到 1.2 億
-data = data[(data['Price'] >= 500000) & (data['Price'] <= 120000000)]
+# 假設合理的價格範圍為 50 萬到 1.5 億
+data = data[(data['Price'] >= 500000) & (data['Price'] <= 150000000)]
 
 # 對價格進行對數變換
 data['Price'] = np.log1p(data['Price'])
@@ -138,14 +138,16 @@ class RandomForestModel:
     def __init__(self, **kwargs):
         # 預設超參數
         self.params = {
-            'n_estimators': 100,
-            'max_depth': None,
-            'min_samples_split': 2,
-            'min_samples_leaf': 1,
+            'n_estimators': 300,
+            'max_depth': 20,
+            'min_samples_split': 5,
+            'min_samples_leaf': 2,
             'max_features': 'sqrt',
+            'bootstrap': True,
             'random_state': 42,
             'n_jobs': -1
         }
+
         # 更新預設參數
         self.params.update(kwargs)
         self.model = RandomForestRegressor(**self.params)
