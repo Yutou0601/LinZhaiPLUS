@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\OneDrive\\桌面\\LinZhaiPLUS專案\\LinZhaiPLUS\\ASP_net_test\\HousePricePredictionApp\\HousePricePredictionApp.csproj",
+      "projectUniqueName": "C:\\Users\\User\\OneDrive\\桌面\\LinZhaiPLUS專案\\LinZhaiPLUS\\HousePricePredictionApp\\HousePricePredictionApp.csproj",
       "projectName": "HousePricePredictionApp",
-      "projectPath": "C:\\Users\\User\\OneDrive\\桌面\\LinZhaiPLUS專案\\LinZhaiPLUS\\ASP_net_test\\HousePricePredictionApp\\HousePricePredictionApp.csproj",
+      "projectPath": "C:\\Users\\User\\OneDrive\\桌面\\LinZhaiPLUS專案\\LinZhaiPLUS\\HousePricePredictionApp\\HousePricePredictionApp.csproj",
       "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\OneDrive\\桌面\\LinZhaiPLUS專案\\LinZhaiPLUS\\ASP_net_test\\HousePricePredictionApp\\obj\\",
+      "outputPath": "C:\\Users\\User\\OneDrive\\桌面\\LinZhaiPLUS專案\\LinZhaiPLUS\\HousePricePredictionApp\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"

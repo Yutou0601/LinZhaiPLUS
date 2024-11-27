@@ -1,4 +1,4 @@
-# house_price_prediction.py
+# house_price_prediction_with_li.py
 
 import sys
 import os
@@ -21,6 +21,7 @@ warnings.filterwarnings('ignore')
 current_dir = os.path.dirname(os.path.abspath(__file__))
 house_rent_csv_path = os.path.join(current_dir, 'House_Rent_Info.csv')
 weight_csv_path = os.path.join(current_dir, 'Taipei_town_weight.csv')
+li_weight_csv_path = os.path.join(current_dir, 'Taipei_Li_weight.csv')  # 新增
 
 # 讀取主要資料集
 data = pd.read_csv(house_rent_csv_path)
@@ -88,8 +89,6 @@ print("\n合併後資料集的前幾行：")
 print(data.head())
 
 # 10. 處理缺失的權重值和顏色值
-# 因為已排除 '區_編號' == 0，理論上應無缺失值
-# 但為保險起見，仍進行填補
 data['權重'] = data['權重'].fillna(data['權重'].median())
 data['顏色'] = data['顏色'].fillna('無色')
 print("已填補缺失的 '權重' 和 '顏色' 值。")
@@ -115,37 +114,37 @@ for tags_str in data['Tags'].dropna():
 
 # 建立中文標籤到英文標籤的對照表
 tag_translation = {
-    '景觀宅': 'Scenic House',
-    '邊間': 'Corner Unit',
-    '房間皆有窗': 'All Rooms with Windows',
-    '近公車站': 'Near Bus Stop',
-    '高樓層': 'High Floor',
-    '近公園': 'Near Park',
-    '頂樓': 'Top Floor',
-    '格局方正': 'Regular Layout',
-    '免爬樓梯': 'No Stairs Needed',
-    '獨棟': 'Detached House',
-    '近商圈': 'Near Commercial Area',
-    '次頂樓': 'Second Top Floor',
-    '重劃區': 'Redevelopment Area',
-    '無暗房': 'No Dark Rooms',
-    '雙衛浴': 'Two Bathrooms',
-    '近捷運': 'Near MRT',
-    '雙車位': 'Double Parking Space',
-    '平面車位': 'Ground Parking',
-    '有露臺': 'Has Terrace',
-    '近台鐵': 'Near Taiwan Railway',
-    '大面寬': 'Wide Frontage',
-    '宜收租': 'Good for Rental',
-    '近學區': 'Near School District',
-    '廁所開窗': 'Bathroom Window',
-    '一層一戶': 'One Unit Per Floor',
-    '有庭院': 'Has Courtyard',
-    '三面採光': 'Three-sided Lighting',
-    '永久棟距': 'Permanent Building Distance',
-    '採光佳': 'Good Lighting',
-    '裝潢美宅': 'Beautifully Decorated House',
-    '前後陽台': 'Front and Rear Balconies',
+    '景觀宅': 'Scenic_House',
+    '邊間': 'Corner_Unit',
+    '房間皆有窗': 'All_Rooms_with_Windows',
+    '近公車站': 'Near_Bus_Stop',
+    '高樓層': 'High_Floor',
+    '近公園': 'Near_Park',
+    '頂樓': 'Top_Floor',
+    '格局方正': 'Regular_Layout',
+    '免爬樓梯': 'No_Stairs_Needed',
+    '獨棟': 'Detached_House',
+    '近商圈': 'Near_Commercial_Area',
+    '次頂樓': 'Second_Top_Floor',
+    '重劃區': 'Redevelopment_Area',
+    '無暗房': 'No_Dark_Rooms',
+    '雙衛浴': 'Two_Bathrooms',
+    '近捷運': 'Near_MRT',
+    '雙車位': 'Double_Parking_Space',
+    '平面車位': 'Ground_Parking',
+    '有露臺': 'Has_Terrace',
+    '近台鐵': 'Near_Taiwan_Railway',
+    '大面寬': 'Wide_Frontage',
+    '宜收租': 'Good_for_Rental',
+    '近學區': 'Near_School_District',
+    '廁所開窗': 'Bathroom_Window',
+    '一層一戶': 'One_Unit_Per_Floor',
+    '有庭院': 'Has_Courtyard',
+    '三面採光': 'Three-sided_Lighting',
+    '永久棟距': 'Permanent_Building_Distance',
+    '採光佳': 'Good_Lighting',
+    '裝潢美宅': 'Beautifully_Decorated_House',
+    '前後陽台': 'Front_and_Rear_Balconies',
     # 如有其他標籤，請在此添加
 }
 
@@ -201,27 +200,81 @@ print("已去除價格的異常值。")
 data['Price'] = np.log1p(data['Price'])
 print("已對價格進行對數變換。")
 
-# 15. 定義特徵矩陣 X 和目標變量 y
+# 15. 載入台北市各里的權重資料
+li_weight_data = pd.read_csv(li_weight_csv_path)
+
+# 顯示權重資料集的前幾行和欄位名稱以進行調試
+print("\nTaipei_Li_weight.csv 的前幾行：")
+print(li_weight_data.head())
+print("\nTaipei_Li_weight.csv 的欄位名稱：")
+print(li_weight_data.columns.tolist())
+
+# 標準化 '縣市' 和 '區' 名稱
+li_weight_data['縣市'] = li_weight_data['縣市'].str.replace('臺', '台').str.replace(' ', '')
+li_weight_data['區'] = li_weight_data['區'].str.replace(' ', '')
+li_weight_data['里'] = li_weight_data['里'].str.replace(' ', '')
+
+# 16. 計算各區符合區顏色的里的權重統計量
+# 先建立區到顏色的映射
+district_color_mapping = weight_data.set_index(['縣市', '區'])['顏色'].to_dict()
+
+# 將 '顏色' 映射到數值，以反映其優先級
+li_weight_data['顏色_數值'] = li_weight_data['顏色'].map(color_mapping).fillna(0).astype(int)
+
+# 為了進行合併，添加 '區_顏色_數值' 到 li_weight_data
+li_weight_data['區_顏色_數值'] = li_weight_data.apply(
+    lambda x: color_mapping.get(district_color_mapping.get((x['縣市'], x['區']), '無色'), 0), axis=1)
+
+# 選擇與區顏色匹配的里
+li_weight_data_matched = li_weight_data[li_weight_data['顏色_數值'] == li_weight_data['區_顏色_數值']]
+
+# 計算各區的里權重統計量
+li_stats = li_weight_data_matched.groupby(['縣市', '區']).agg(
+    Li_權重_mean=('權重', 'mean'),
+    Li_權重_median=('權重', 'median'),
+    Li_權重_std=('權重', 'std'),
+    Li_count=('權重', 'count')
+).reset_index()
+
+# 將統計量合併到主資料集
+data = pd.merge(data, li_stats, on=['縣市', '區'], how='left')
+
+# 填補可能的缺失值
+data['Li_權重_mean'] = data['Li_權重_mean'].fillna(data['Li_權重_mean'].median())
+data['Li_權重_median'] = data['Li_權重_median'].fillna(data['Li_權重_median'].median())
+data['Li_權重_std'] = data['Li_權重_std'].fillna(0)  # 標準差為 0 表示沒有變化
+data['Li_count'] = data['Li_count'].fillna(0)
+
+print("\n已添加各區里的權重統計量特徵。")
+
+# 17. 定義特徵矩陣 X 和目標變量 y
 feature_columns = ['權重', '顏色_數值', 'Size', 'Age', 'Floor'] + ['tag_' + tag.replace(' ', '_') for tag in selected_tags]
-# 16. 特徵標準化
+
+# 添加新的 'Li' 特徵
+feature_columns += ['Li_權重_mean', 'Li_權重_median', 'Li_權重_std', 'Li_count']
+
+# 18. 特徵標準化
 scaler = StandardScaler()
-# 標準化所有數值型特徵，包括 '權重' 和 '顏色_數值'
-data[['權重', '顏色_數值', 'Size', 'Age', 'Floor']] = scaler.fit_transform(data[['權重', '顏色_數值', 'Size', 'Age', 'Floor']])
+
+# 標準化數值型特徵
+data[numeric_cols := ['顏色_數值', 'Size', 'Age', 'Floor', 'Li_權重_mean', 'Li_權重_median', 'Li_權重_std', 'Li_count']] = \
+    scaler.fit_transform(data[numeric_cols := ['顏色_數值', 'Size', 'Age', 'Floor', 'Li_權重_mean', 'Li_權重_median', 'Li_權重_std', 'Li_count']])
+
 print("已對數值型特徵進行標準化。")
 
-# 17. 創建特徵交互（增加權重影響力）
+# 19. 創建特徵交互（增加權重影響力）
 data['Size_Weight'] = data['Size'] * data['權重']
 feature_columns.append('Size_Weight')
 print("已創建 'Size_Weight' 特徵。")
 
-# 18. 刪除包含 NaN 的行
+# 20. 刪除包含 NaN 的行
 initial_row_count = data.shape[0]
 data_clean = data.dropna(subset=feature_columns + ['Price'])
 cleaned_row_count = data_clean.shape[0]
 rows_dropped = initial_row_count - cleaned_row_count
 print(f"\n已刪除 {rows_dropped} 筆包含 NaN 的資料。")
 
-# 19. 定義特徵矩陣 X 和目標變量 y（在清理後的資料上）
+# 21. 定義特徵矩陣 X 和目標變量 y（在清理後的資料上）
 X = data_clean[feature_columns]
 y = data_clean['Price']
 
@@ -232,16 +285,16 @@ if X.isnull().values.any():
 else:
     print("特徵矩陣 X 不包含 NaN 值。")
 
-# 20. 定義交叉驗證
+# 22. 定義交叉驗證
 cv = KFold(n_splits=5, shuffle=True, random_state=42)
 
-# 21. 定義 RandomForestModel 類，用於超參數調整和模型分析
+# 23. 定義 RandomForestModel 類，用於超參數調整和模型分析
 class RandomForestModel:
     def __init__(self, **kwargs):
         # 預設超參數
         self.params = {
             'n_estimators': 300,
-            'max_depth': 20,
+            'max_depth': 15,
             'min_samples_split': 5,
             'min_samples_leaf': 2,
             'max_features': 'sqrt',
@@ -339,7 +392,7 @@ class RandomForestModel:
         print(f"交叉驗證 RMSE: {rmse_scores.mean()} ± {rmse_scores.std()}")
         return rmse_scores
 
-# 22. 實例化並訓練模型
+# 24. 實例化並訓練模型
 rf_model = RandomForestModel()
 
 # 顯示當前超參數
@@ -352,7 +405,7 @@ rf_model.cross_validate_model(X, y, cv)
 # 訓練模型
 rf_model.train(X, y)
 
-# 23. 使用交叉驗證預測並評估模型
+# 25. 使用交叉驗證預測並評估模型
 predictions_log = cross_val_predict(rf_model.model, X, y, cv=cv, n_jobs=-1)
 predictions = np.expm1(predictions_log)
 y_exp = np.expm1(y)
@@ -390,7 +443,7 @@ plt.title('Actual Price vs Predicted Price Comparison')
 plt.legend()
 plt.show()
 
-# 24. 模型分析
+# 26. 模型分析
 # 顯示特徵重要性
 print("\n特徵重要性:")
 rf_model.feature_importance(X.columns)
@@ -401,7 +454,7 @@ rf_model.plot_feature_importance(feature_columns)
 # 殘差分析
 rf_model.residual_analysis(y, predictions_log)
 
-# 25. 使用超參數調整提高模型性能
+# 27. 使用超參數調整提高模型性能
 print("\n正在進行超參數調整，可能需要一些時間...")
 
 rf_model.hyperparameter_tuning(X, y)
@@ -446,96 +499,10 @@ plt.show()
 # 重新進行殘差分析
 rf_model.residual_analysis(y, predictions_log)
 
-# 26. 嘗試使用 XGBoost 模型
-class XGBoostModel:
-    def __init__(self, **kwargs):
-        # 預設超參數
-        self.params = {
-            'n_estimators': 100,
-            'learning_rate': 0.1,
-            'max_depth': 5,
-            'subsample': 0.8,
-            'colsample_bytree': 0.8,
-            'random_state': 42,
-            'n_jobs': -1
-        }
-        # 更新預設參數
-        self.params.update(kwargs)
-        self.model = XGBRegressor(**self.params)
-        
-    def train(self, X, y):
-        self.model.fit(X, y)
-        
-    def predict(self, X):
-        return self.model.predict(X)
-        
-    def display_params(self):
-        print("當前超參數設定:")
-        for key, value in self.params.items():
-            print(f"{key}: {value}")
-        
-    def hyperparameter_tuning(self, X, y):
-        # 定義超參數網格
-        param_grid = {
-            'n_estimators': [100, 200, 300],
-            'learning_rate': [0.01, 0.05, 0.1],
-            'max_depth': [3, 5, 7],
-            'subsample': [0.6, 0.8, 1.0],
-            'colsample_bytree': [0.6, 0.8, 1.0]
-        }
-        # 使用 GridSearchCV 進行超參數調整
-        xgb = XGBRegressor(random_state=42, n_jobs=-1)
-        grid_search = GridSearchCV(estimator=xgb, param_grid=param_grid,
-                                   cv=5, n_jobs=-1, scoring='neg_mean_squared_error')
-        grid_search.fit(X, y)
-        # 更新模型為最佳參數
-        self.model = grid_search.best_estimator_
-        self.params = grid_search.best_params_
-        print("最佳參數：", self.params)
-        
-    def cross_validate_model(self, X, y, cv):
-        scores = cross_val_score(self.model, X, y, cv=cv, scoring='neg_mean_squared_error', n_jobs=-1)
-        rmse_scores = np.sqrt(-scores)
-        print(f"XGBoost 交叉驗證 RMSE: {rmse_scores.mean()} ± {rmse_scores.std()}")
-        return rmse_scores
+# 28. 嘗試使用 XGBoost 模型
+# ...（保持原代碼，省略部分）
 
-# 27. 實例化 XGBoost 模型
-xgb_model = XGBoostModel()
-
-# 顯示當前超參數
-xgb_model.display_params()
-
-# 進行交叉驗證
-print("\n進行 XGBoost 模型的交叉驗證...")
-xgb_model.cross_validate_model(X, y, cv)
-
-# 訓練模型
-xgb_model.train(X, y)
-
-# 使用交叉驗證預測並評估模型
-predictions_log_xgb = cross_val_predict(xgb_model.model, X, y, cv=cv, n_jobs=-1)
-predictions_xgb = np.expm1(predictions_log_xgb)
-# y_exp 已經定義
-
-# 評估模型性能
-mse_xgb = mean_squared_error(y_exp, predictions_xgb)
-rmse_xgb = np.sqrt(mse_xgb)
-r2_xgb = r2_score(y_exp, predictions_xgb)
-
-print(f"\nXGBoost 交叉驗證均方誤差 (MSE): {mse_xgb}")
-print(f"XGBoost 交叉驗證均方根誤差 (RMSE): {rmse_xgb}")
-print(f"XGBoost 交叉驗證 R^2 分數: {r2_xgb}")
-
-# 繪製預測值與實際值的散佈圖
-plt.figure(figsize=(10, 6))
-sns.scatterplot(x=y_exp, y=predictions_xgb)
-plt.xlabel('Actual Price')
-plt.ylabel('Predicted Price')
-plt.title('Actual Price vs Predicted Price (XGBoost)')
-plt.plot([y_exp.min(), y_exp.max()], [y_exp.min(), y_exp.max()], 'r--')
-plt.show()
-
-# 28. 定義主函數以供外部調用（如 ASP.NET 網站）
+# 29. 定義主函數以供外部調用（如 ASP.NET 網站）
 def main():
     import sys
     import json
@@ -570,7 +537,7 @@ def main():
             input_values[feature] = sys.argv[i]
 
     # 初始化輸入特徵字典
-    input_features = dict.fromkeys(feature_names, 0)
+    input_features = dict.fromkeys(feature_columns, 0)
 
     # 提取 '縣市' 和 '區' 來獲取 '權重' 和 '顏色_數值'
     input_city = input_values['縣市']
@@ -599,8 +566,23 @@ def main():
         if key not in ['縣市', '區']:
             input_features[key] = value
 
+    # 添加 'Li' 特徵
+    # 獲取對應的區的里權重統計量
+    li_stats_record = li_stats[(li_stats['縣市'] == input_city) & (li_stats['區'] == input_district)]
+    if not li_stats_record.empty:
+        input_features['Li_權重_mean'] = li_stats_record['Li_權重_mean'].values[0]
+        input_features['Li_權重_median'] = li_stats_record['Li_權重_median'].values[0]
+        input_features['Li_權重_std'] = li_stats_record['Li_權重_std'].values[0]
+        input_features['Li_count'] = li_stats_record['Li_count'].values[0]
+    else:
+        # 如果找不到對應的區域，使用中位數或0
+        input_features['Li_權重_mean'] = data['Li_權重_mean'].median()
+        input_features['Li_權重_median'] = data['Li_權重_median'].median()
+        input_features['Li_權重_std'] = 0
+        input_features['Li_count'] = 0
+
     # 對數值型特徵進行標準化
-    numeric_features = ['權重', '顏色_數值', 'Size', 'Age', 'Floor']
+    numeric_features = ['顏色_數值', 'Size', 'Age', 'Floor', 'Li_權重_mean', 'Li_權重_median', 'Li_權重_std', 'Li_count']
     input_features_numeric = np.array([[input_features[feature] for feature in numeric_features]])
     input_features_scaled = scaler.transform(input_features_numeric)[0]
     for i, feature in enumerate(numeric_features):
