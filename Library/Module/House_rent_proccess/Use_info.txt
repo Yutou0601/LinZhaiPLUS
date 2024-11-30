@@ -1,0 +1,5 @@
+You can put the data crawled by the crawler into House_Rent_Info.csv and then execute house_rent_proccesser.py . 
+Then it will generate the data into New_House_Rent_Info.csv file and its function is to read all the data into the text inside if there are relevant areas.
+
+My py program will read its name and then find out if there is the name of a certain area in Taipei City. 
+If there is, it will give it a number and show which district it is from. If not, it will assume it is numbered and numbered 0.
