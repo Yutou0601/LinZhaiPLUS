@@ -13,19 +13,7 @@
     <link rel="icon" href="{{ url_for('static', filename='home/favicon.icon') }}">
 </head>
 <body>
-    {# 如果您有製作共用的 header，可取消註解 #}
     {% include 'layout/header.html' %}
-
-    <!-- 顯示提示訊息 (flashed messages) -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
 
     <h1 class="page-title">推薦房源</h1>
 
