@@ -1,0 +1,144 @@
+ 
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));  
+    gap: 20px; 
+    justify-items: center; 
+    margin: 20px;
+}
+
+ 
+.card {
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    height: 400px; 
+    width: 100%;
+    display: flex;
+ 
+    overflow: hidden 
+}
+
+ 
+.card-image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;  
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    padding: 10px;
+}
+
+.card-content h3 {
+    flex: 0 0 20%;  
+    font-size: 18px;
+    height: 100%;
+    margin: 0;
+    color: #333;
+}
+
+.card-content p {
+    flex: 0 0 20%;
+    height: 100%;
+    font-size: 14px;
+    margin: 0 10px 10px;
+    color: #666;
+}
+
+ 
+.card-content .rent {
+   
+    flex: 0 0 5%; 
+    font-size: 16px;
+    font-weight: bold;
+    color: #9fcdff;
+    margin: 5px 0;
+}
+
+.card-content a {
+    flex: 0 0 5%;
+    width: 150px;
+    
+    text-align: center;
+    background-color: #8fc3fa;
+    color: #fff;
+    padding: 10px;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: auto;  
+}
+
+
+.card a:hover {
+    background-color: #62a8f4;
+}
+ 
+
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    padding: 20px;
+    background-color: #d4d7d7;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-family:Arial, Helvetica, sans-serif;
+     
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    margin: 0 10px;
+}
+
+.filter-group label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.filter-submit {
+    background-color: #9dcbfc;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.filter-submit:hover {
+    background-color: #68b1ff;
+}
+ 
+ 
+.container {
+    max-width: 1250px;  
+    margin: 0 auto;  
+    padding: 20px;  
+    background-color: #ffffff;  
+    border-radius: 8px;  
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  
+}

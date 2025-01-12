@@ -1,0 +1,304 @@
+/* 詳細頁樣式 */
+.detail-page {
+    padding-left: 100px;
+    padding-right: 100px;
+    padding-top: 20px;
+    padding-bottom: 50px;
+    background-color: #ffffff;
+}
+
+.detail-page h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+    text-align: center;
+    padding-top: 0px;
+}
+
+ 
+.detail-container {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 1300px;
+    max-height: 7000px;
+    min-height: 500px;
+    gap: 20px;
+    background-color: #f4fafd;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 1 4px 8px #393939;
+}
+
+ 
+.detail-image {
+    flex: 1 1 40%;
+    padding-top: 50px;
+    padding-left: 70px;
+    min-height: 200px;
+    max-height: 400px;
+    max-width: 500px;
+    margin: top;
+    background-color: #f4fafd; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.detail-image img {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+ 
+.detail-info {
+    padding-top: 50px;
+    flex: 1 1 20%;
+    max-width: 40%;
+    padding-left: 175px;
+}
+
+.detail-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.detail-info li {
+    margin-bottom: 10px;
+    font-size: 20px;
+    color: #555;
+}
+
+.detail-info li strong {
+    font-weight: bold;
+    color: #333;
+}
+
+
+
+
+.highlight-price {
+    font-size: 18px;
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.similar-listings {
+    margin-top: 40px;
+}
+
+.similar-listings h2 {
+    color: #333;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* 卡片樣式 */
+.cards {
+    margin: auto;
+    max-width: 1200px;
+    max-height: 7000px;
+    min-height: 300px;
+    min-width: 500px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    background-color: #f4fafd;
+    box-shadow: #c6f1f5;
+    margin: auto;
+    align-items: flex-start;
+    justify-content: center;  
+    padding-top: 30px;
+    padding-bottom: 30px;
+    border-radius: 30px;
+}
+
+.card {
+    width: 30%;
+    background-color: #f9f9f9;
+    color: #3b3636;
+    max-width: 300px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+    
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.card h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.card p {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.card .rent {
+    font-size: 16px;
+    font-weight: bold;
+    color: #27ae60;
+}
+
+.card .view-details {
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: #3498db;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    margin-top: 15px;
+    transition: background-color 0.3s ease;
+}
+
+.card .view-details:hover {
+    background-color: #2980b9;
+}
+
+/* 外層容器樣式 */
+ 
+.map_container2 {
+    padding-top: 10px;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    height: 400px; 
+    overflow: hidden;  
+    border-radius: 20px;    
+    box-shadow: #777dee;
+}
+
+ 
+
+.map_container {
+    padding-top: 30px;
+    padding-left: 20px;     
+    padding-right: 20px;    
+    padding-bottom: 20px;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    height: 420px;    
+    overflow: hidden;
+    border-radius: 20px;   
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);  
+    background-color: #f5f5f5;   
+}
+
+.map_container iframe {
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;    
+    border: none;   
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);   
+    display: block;
+}
+
+
+
+ 
+.facility-stats {
+    background: #f4fafd;
+    padding: 20px;
+    margin-top: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    
+  
+    display: flex;
+    flex-wrap: wrap;  
+    justify-content: flex-start;  
+    gap: 40px;  
+}
+
+.facility-stats h3 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;  
+    width: 100%;  
+    text-align: center;
+}
+
+.facility-stats ul {
+    display: flex;
+    flex-wrap: wrap;  
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+}
+
+.facility-stats ul li {
+    font-size: 18px;
+    color: #555;
+    background-color: #faebfc;
+    padding: 12px 25px;  
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    
+   
+    min-width: 150px;  
+    text-align: center;
+    margin-bottom: 20px;  
+}
+
+
+
+
+
+
+
+
+
+ 
+.price-prediction {
+    display: flex;
+    justify-content: space-between;
+    background: #f4fafd;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+.price-item {
+    flex: 1;
+    text-align: center;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin: 0 10px;
+}
+
+.price-item h3 {
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.price-item p {
+    font-size: 18px;
+    color: #555;
+}
