@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from model.knn import knn_similar_listings
 import sqlite3
+import subprocess, sys
+from apscheduler.schedulers.background import BackgroundScheduler
 from model.map_func import generate_map
 from model.db_handler import *
 from model.CP_estimate import predict_cp_value, load_label_encoders
@@ -8,6 +10,7 @@ from model.xgb import predict_price
 import pandas as pd
 import os
 from model.CP_estimate import predict_cp_value, load_label_encoders
+from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 
 app = Flask(__name__)
@@ -41,13 +44,10 @@ def calculate_cp_value(listing):
     )
     
     if cp_value is None:
-        # 代表預測失敗，您可以選擇回傳 0 或顯示警告
         logging.warning("predict_cp_value 回傳 None，無法取得 CP Value")
         return 0
-    
     return cp_value[0]  # 取出預測值
 
-# 查詢房屋清單 
 def query_listings(filter_type=None, filter_city=None, min_rent=None, max_rent=None):
     conn = get_db_connection()
     query = """
@@ -73,20 +73,15 @@ def query_listings(filter_type=None, filter_city=None, min_rent=None, max_rent=N
     conn.close()
     return listings
 
-# 獲取可選的城市和屋型
 def get_filter_options():
     conn = get_db_connection()
     cities = conn.execute("SELECT DISTINCT city FROM listings").fetchall()
     types = conn.execute("SELECT DISTINCT house_type FROM listings").fetchall()
     conn.close()
-    
-    # 把查詢結果轉換成簡單的 list 形式
     cities = [city['city'] for city in cities]
     types = [type_['house_type'] for type_ in types]
-    
     return cities, types
 
-# 瀏覽頁面路由
 @app.route('/browse', methods=['GET', 'POST'])
 def browse():
     if request.method == 'POST':
@@ -100,21 +95,15 @@ def browse():
         min_rent = None
         max_rent = None
     
-    # 查詢資料庫資料
     listings = query_listings(filter_type, filter_city, min_rent, max_rent)
-    
-    # 取得篩選條件選項
     cities, types = get_filter_options()
-
     return render_template('browse.html', listings=listings, filter_type=filter_type, filter_city=filter_city, 
                            min_rent=min_rent, max_rent=max_rent, cities=cities, types=types)
 
-# 根路徑路由
 @app.route('/')
 def home():
-    return render_template('home.html')  # 或使用 redirect 到 '/browse'
+    return render_template('home.html')
 
-# 詳情頁面路由
 @app.route('/detail/<int:id>')
 def detail(id):
     conn = get_db_connection()
@@ -124,13 +113,8 @@ def detail(id):
         return render_template('house_not_exist.html')
 
     listing = dict(row)
-
-    # --------------------------------------------------------
-    # (A) 先確保 city / house_type 字串化，再把 '0' 或空字串改為 'Unknown'
-    # --------------------------------------------------------
     city_str = str(listing.get('city', '')).strip()
     house_str = str(listing.get('house_type', '')).strip()
-
     if city_str in ['0', '']:
         city_str = 'Unknown'
     if house_str in ['0', '']:
@@ -141,17 +125,10 @@ def detail(id):
 
     city = listing['city']
     district = listing['district']
-
-    # 計算區域平均價格
     avg_district_price = get_avg_district_price(district, conn)
-    
-    # 預測 CP_value
     predicted_cp_value = calculate_cp_value(listing)
-    
-    # 預測 價格
     predicted_price = predict_price(listing)
 
-    # 取得所有同城市的房屋列表
     all_listings = conn.execute(
         "SELECT * FROM listings WHERE city = ? AND id != ?",
         (city, id)
@@ -160,7 +137,6 @@ def detail(id):
 
     same_district_listings = [house for house in all_listings if house['district'] == district]
     recommended_listings = knn_similar_listings(all_listings, listing)
-
     conn.close()
 
     address = listing['location'].split('/')[0]
@@ -178,21 +154,16 @@ def detail(id):
         district_listings=same_district_listings,   
         recommended_listings=recommended_listings,  
     )
-    
 
 def get_avg_district_price(district, conn):
-    """計算該區域的平均價格"""
     avg_price = conn.execute("SELECT AVG(price) FROM listings WHERE district = ?", (district,)).fetchone()[0]
     return avg_price
 
-# Search Implement
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     search_query = request.form.get('query', '').strip() if request.method == 'POST' else ''
     listings = []
-
     if search_query:
-         
         conn = get_db_connection()
         query = """
             SELECT id, title, description, image, house_type, city, price, location, CP_value, district
@@ -204,11 +175,9 @@ def search():
         conn.close()
     return render_template('search.html', query=search_query, listings=listings)
 
-# Recommender Route
 @app.route('/recommender', methods=['GET', 'POST'])
 def recommender():
     try:
-        # 假設 'house_index' 在 session 中是當前房源的 ID
         id = session.get('house_index')
         if not id:
             flash('找不到相關的房源資訊。', 'warning')
@@ -216,27 +185,21 @@ def recommender():
         
         conn = get_db_connection()
         listing = conn.execute("SELECT * FROM listings WHERE id = ?", (id,)).fetchone()
-
         if not listing:
             conn.close()
             return render_template('house_not_exist.html')
-
         listing = dict(listing)
         city = listing['city']
         district = listing['district']
 
-        # 取得所有同城市的房屋列表
         all_listings = conn.execute(
             "SELECT * FROM listings WHERE city = ? AND id != ?",
             (city, id)
         ).fetchall()
         all_listings = [dict(l) for l in all_listings]
-
-        # KNN推薦：同城市的房源 
         recommended_listings = knn_similar_listings(all_listings, listing)
         conn.close()
 
-        # 從資料庫中讀取 CP_value 並排序
         conn = sqlite3.connect(os.path.join(app.root_path, 'data', 'database.db'))
         conn.row_factory = sqlite3.Row
         query = """
@@ -263,16 +226,9 @@ def recommender():
         sorted_df = pd.read_sql_query(query, conn)
         conn.close()
 
-        # 將 DataFrame 轉換為字典列表
         sorted_listings = sorted_df.to_dict(orient='records')
-
-        # ================================
-        # (1) 在此處「去重」：
-        #     以 (Name, Price, Image_name) 為判斷依據
-        # ================================
         unique_dict = {}
         for item in sorted_listings:
-            # 將標題、價格、圖片三者組合成 key
             the_key = (
                 item.get('Name'),
                 item.get('Price'),
@@ -280,21 +236,13 @@ def recommender():
             )
             if the_key not in unique_dict:
                 unique_dict[the_key] = item
-
-        # 只保留第一個遇到的
         unique_list = list(unique_dict.values())
-
     except Exception as e:
         logging.error(f"推薦頁面發生錯誤：{e}")
         flash(f"發生錯誤：{str(e)}", 'danger')
         unique_list = []
-
-    # 將「去重後」的結果傳給模板
     return render_template('recommender.html', listings=unique_list)
 
-
-
-# Register, Login, Logout, Manage Routes
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """註冊頁面"""
@@ -302,13 +250,11 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
         email = request.form.get('email')
-
         if register_user(username, password, email):
             flash('註冊成功！請登入。', 'success')
             return redirect(url_for('login'))
         else:
             flash('帳號已被使用！請選擇其他帳號。', 'danger')
-    
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -317,17 +263,15 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-
         user = verify_user(username, password)
         if user:
             session['user_id'] = user['id']
             session['username'] = user['username']
-            session['house_index'] = user['browse_list']  # 確保 'browse_list' 是正確的欄位
+            session['house_index'] = user['browse_list']
             flash('登入成功！', 'success')
             return redirect(url_for('manage'))
         else:
             flash('帳號或密碼錯誤', 'danger')
-    
     return render_template('login.html')
 
 @app.route('/logout')
@@ -343,10 +287,68 @@ def manage():
     if 'user_id' not in session:
         flash('請先登入！', 'warning')
         return redirect(url_for('login'))
+    return render_template('manage.html', username=session['username'])
+
+# ------------------------------------
+# (A) 後台任務：跑爬蟲 + 匯入資料庫 + 訓練模型
+# ------------------------------------
+def run_crawler_pipeline_training():
+    try:
+        logging.info("[排程任務] 開始執行爬蟲並生成 House_Rent_Info.csv")
+
+        # 1) 指定 Crawler_Info.py 位於 model 目錄下
+        crawler_path = os.path.join(app.root_path, "model", "Crawler_Info.py")
+        subprocess.run([sys.executable, crawler_path], check=True)
+
+        logging.info("[排程任務] 爬蟲完成！開始導入資料庫 (database_pipe.py)")
+
+        # 2) 同樣指定 database_pipe.py 在 script/ 目錄下
+        dbpipe_path = os.path.join(app.root_path, "script", "database_pipe.py")
+        subprocess.run([sys.executable, dbpipe_path], check=True)
+
+        logging.info("[排程任務] 匯入資料完成！開始執行 CP_estimate.py (訓練並更新 CP_value)")
+
+        # 3) CP_estimate.py 在 model/ 下
+        cpest_path = os.path.join(app.root_path, "model", "CP_estimate.py")
+        subprocess.run([sys.executable, cpest_path], check=True)
+
+        logging.info("[排程任務] CP_value 更新完成！本次自動化流程結束。")
+
+    except subprocess.CalledProcessError as e:
+        logging.error(f"[排程任務] 執行子程序失敗：{e}")
+    except Exception as ex:
+        logging.error(f"[排程任務] 發生未知錯誤：{ex}")
+
+# ------------------------------------
+# (B) 排程初始化 → 每小時整點觸發
+# ------------------------------------
+def init_scheduler():
+    """
+    利用 APScheduler 於 Flask 啟動後，開啟背景排程。
+    每3小時執行一次後台任務 run_crawler_pipeline_training。
+    """
+    logging.info("啟動 APScheduler 排程器...")
+    scheduler = BackgroundScheduler()
     
-    user_id  = session['user_id']
-    username = session['username']
-    return render_template('manage.html', username=username)
+    # 每3小時執行一次
+    scheduler.add_job(
+        run_crawler_pipeline_training,
+        trigger='interval',
+        hours=3,
+        id='crawler_pipeline_job',  # 為任務指定一個唯一的ID
+        replace_existing=True  # 如果有相同ID的任務，則替換
+    )
+    
+    scheduler.start()
+    logging.info("APScheduler 排程器已啟動，每3小時執行一次。")
+
+
+@app.route('/manual_run')
+def manual_run():
+    """手動觸發整個後台流程（爬蟲→匯入→訓練）"""
+    run_crawler_pipeline_training()
+    return "手動執行完畢。"
 
 if __name__ == '__main__':
+    init_scheduler()
     app.run(debug=True, port=5001)
