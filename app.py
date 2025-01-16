@@ -129,14 +129,19 @@ def detail(id):
     predicted_cp_value = calculate_cp_value(listing)
     predicted_price = predict_price(listing)
 
+    # 使用 LIMIT 限制返回的 all_listings 數量
     all_listings = conn.execute(
-        "SELECT * FROM listings WHERE city = ? AND id != ?",
+        "SELECT * FROM listings WHERE city = ? AND id != ? LIMIT 50",  # 假設最多返回 50 條
         (city, id)
     ).fetchall()
     all_listings = [dict(l) for l in all_listings]
 
-    same_district_listings = [house for house in all_listings if house['district'] == district]
-    recommended_listings = knn_similar_listings(all_listings, listing)
+    # 限制 same_district_listings 為最多 210 條
+    same_district_listings = [house for house in all_listings if house['district'] == district][:20]
+
+    # 取得推薦列表並限制為最多 20 條
+    recommended_listings = knn_similar_listings(all_listings, listing)[:20]
+
     conn.close()
 
     address = listing['location'].split('/')[0]
@@ -145,7 +150,7 @@ def detail(id):
     return render_template(
         'detail.html',
         listing=listing,
-        similar_listings=all_listings,
+        similar_listings=all_listings[:10],  # 假設您希望顯示最多 10 個相似列表
         predicted_cp_value=predicted_cp_value,
         predicted_price=predicted_price,
         avg_district_price=round(avg_district_price, 3),
@@ -154,6 +159,7 @@ def detail(id):
         district_listings=same_district_listings,   
         recommended_listings=recommended_listings,  
     )
+
 
 def get_avg_district_price(district, conn):
     avg_price = conn.execute("SELECT AVG(price) FROM listings WHERE district = ?", (district,)).fetchone()[0]

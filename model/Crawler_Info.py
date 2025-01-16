@@ -419,7 +419,7 @@ def main():
         logging.info(f"刪除後，listings 表中有 {total_existing} 筆記錄")
 
     # 設定要爬取的頁數
-    page_count = 10
+    page_count = 25
     logging.info(f"開始爬取 {page_count} 頁的房源連結")
     contain = crawler_url_set(page_url, page_count)
     logging.info(f"共找到 {len(contain.titles)} 筆房源連結")

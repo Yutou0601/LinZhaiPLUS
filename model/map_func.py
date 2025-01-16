@@ -2,6 +2,9 @@ import folium
 from folium.plugins import MarkerCluster
 from geopy.geocoders import Nominatim
 import requests
+import asyncio
+import aiohttp
+from functools import lru_cache
 
 # 台灣範圍
 TAIWAN_BOUNDS = [[20.0, 119.0], [25.5, 124.5]]  # [南緯, 東經] 和 [北緯, 西經]
@@ -28,9 +31,10 @@ PLACE_CATEGORIES = [
     "parking",            # 停車場
 ]
 
-def get_coordinates(address):
+@lru_cache(maxsize=1000)
+def get_coordinates_cached(address):
     """
-    透過地址獲取經緯度
+    透過地址獲取經緯度並使用緩存。
     """
     location = geolocator.geocode(address)
     if location:
@@ -38,35 +42,50 @@ def get_coordinates(address):
     else:
         raise Exception(f"無法找到該地址的座標：{address}")
 
-def search_osm_data(lat, lng, category, radius=SEARCH_RADIUS):
-    """
-    使用 OSM API 搜尋附近的地點，並限制範圍在台灣區域內
-    """
-    # 限制搜尋範圍，確保不會超出台灣範圍
-    if not (TAIWAN_BOUNDS[0][0] <= lat <= TAIWAN_BOUNDS[1][0] and TAIWAN_BOUNDS[0][1] <= lng <= TAIWAN_BOUNDS[1][1]):
-        return []
-
+async def fetch_overpass(session, query):
     overpass_url = "http://overpass-api.de/api/interpreter"
+    async with session.get(overpass_url, params={'data': query}) as response:
+        if response.status == 200:
+            return await response.json()
+        else:
+            response.raise_for_status()
+
+async def search_osm_data_async(lat, lng, categories, radius=SEARCH_RADIUS):
+    """
+    使用非同步請求來搜尋多個類別的地點。
+    """
+    category_filters = ''.join([f'node["{cat}"](around:{radius},{lat},{lng});' for cat in categories])
     query = f"""
     [out:json];
     (
-      node[{category}](around:{radius},{lat},{lng});
+      {category_filters}
     );
     out center;
     """
-    response = requests.get(overpass_url, params={'data': query})
-    if response.status_code == 200:
-        data = response.json()
+    async with aiohttp.ClientSession() as session:
+        data = await fetch_overpass(session, query)
         elements = data.get("elements", [])
-        return [(e['lat'], e['lon']) for e in elements if 'lat' in e and 'lon' in e]
-    return []
+        results = {category: [] for category in categories}
+        for e in elements:
+            tags = e.get('tags', {})
+            for category in categories:
+                if category in tags:
+                    results[category].append((e['lat'], e['lon']))
+        return results
+
+def search_osm_data(lat, lng, categories, radius=SEARCH_RADIUS):
+    return asyncio.run(search_osm_data_async(lat, lng, categories, radius))
 
 def generate_map(address, map_width='100%', map_height='400px', zoom_start=16):
     """
-    根據地址生成 Folium 地圖，並限定在台灣範圍內，同時統計附近設施數量
+    根據地址生成 Folium 地圖，並限定在台灣範圍內，同時統計附近設施數量。
     """
     try:
-        lat, lng = get_coordinates(address)
+        lat, lng = get_coordinates_cached(address)
+        # 檢查是否在台灣範圍內
+        if not (TAIWAN_BOUNDS[0][0] <= lat <= TAIWAN_BOUNDS[1][0] and TAIWAN_BOUNDS[0][1] <= lng <= TAIWAN_BOUNDS[1][1]):
+            raise Exception("地址不在台灣範圍內。")
+        
         folium_map = folium.Map(
             location=[lat, lng], 
             zoom_start=zoom_start, 
@@ -89,16 +108,19 @@ def generate_map(address, map_width='100%', map_height='400px', zoom_start=16):
         # 設施數量統計字典
         place_count = {category: 0 for category in PLACE_CATEGORIES}
 
-        # 生成設施標記並統計
-        for category in PLACE_CATEGORIES:
-            locations = search_osm_data(lat, lng, category)
-            cluster = MarkerCluster(name=category).add_to(folium_map)
-            place_count[category] = len(locations)  # 計算每個類別的設施數量
+        # 使用單一 MarkerCluster
+        cluster = MarkerCluster().add_to(folium_map)
+
+        # 一次性查詢所有類別的設施
+        osm_results = search_osm_data(lat, lng, PLACE_CATEGORIES)
+
+        for category, locations in osm_results.items():
+            place_count[category] = len(locations)
             for loc in locations:
                 folium.Marker(
                     location=loc, 
                     popup=category, 
-                    icon=folium.Icon(color="blue")
+                    icon=folium.Icon(color="blue", icon="info-sign")
                 ).add_to(cluster)
 
         # 返回生成的地圖和統計結果
@@ -106,4 +128,3 @@ def generate_map(address, map_width='100%', map_height='400px', zoom_start=16):
 
     except Exception as e:
         return f"<p>地圖生成失敗：{str(e)}</p>", {}
-

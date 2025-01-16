@@ -1,17 +1,22 @@
-import xgboost as xgb
 import pandas as pd
 import joblib
 import re
 import json
+import logging
 from sklearn.preprocessing import LabelEncoder
 
-# 載入已訓練的模型
-model = xgb.Booster()
-model.load_model("model/trained_model_xgb.xgb")
+# 設定日誌
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# 載入已儲存的 LabelEncoder
-le_city = joblib.load('model/le_city.pkl')
-le_house_type = joblib.load('model/le_house_type.pkl')
+# 載入已訓練的模型 (使用 XGBRegressor)
+try:
+    model = joblib.load("model/trained_model.xgb")
+    le_city = joblib.load('model/le_city.pkl')
+    le_house_type = joblib.load('model/le_house_type.pkl')
+    logging.info("模型和 LabelEncoder 載入成功。")
+except FileNotFoundError as e:
+    logging.error(f"載入模型或 LabelEncoder 失敗: {e}")
+    raise
 
 def extract_pattern_info(pattern, keyword):
     if isinstance(pattern, str):
@@ -46,8 +51,17 @@ def preprocess_listing(listing):
     # -------------------------
     # LabelEncoder transform
     # -------------------------
-    listing['City'] = le_city.transform([city_val])[0]
-    listing['HouseType'] = le_house_type.transform([house_val])[0]
+    try:
+        listing['City'] = le_city.transform([city_val])[0]
+    except Exception as e:
+        logging.warning(f"City '{city_val}' 未見於訓練資料，設為 'Unknown'。")
+        listing['City'] = le_city.transform(['Unknown'])[0]
+    
+    try:
+        listing['HouseType'] = le_house_type.transform([house_val])[0]
+    except Exception as e:
+        logging.warning(f"HouseType '{house_val}' 未見於訓練資料，設為 'Unknown'。")
+        listing['HouseType'] = le_house_type.transform(['Unknown'])[0]
 
     # 處理 pattern 與 environment 欄位
     listing['Rooms'] = extract_pattern_info(listing.get('Pattern', ''), '房')
@@ -63,6 +77,7 @@ def preprocess_listing(listing):
         elif not isinstance(listing.get('Environment'), list):
             listing['Environment'] = []
     except json.JSONDecodeError:
+        logging.warning("Environment 欄位 JSON 解碼失敗，設為空列表。")
         listing['Environment'] = []
 
     flat_environment = []
@@ -84,16 +99,24 @@ def preprocess_listing(listing):
     necessary_columns.extend(expected_env_features)
 
     # 最後只取出必要欄位
-    return {key: listing[key] for key in necessary_columns if key in listing}
+    processed = {key: listing.get(key, 0) for key in necessary_columns}
+    return processed
 
-def predict_price(listing):
-    """呼叫此函式進行價格預測。"""
-    processed_listing = preprocess_listing(listing)
+def predict_cp_value(listing):
+    """呼叫此函式進行 CP_value 預測。"""
+    try:
+        processed_listing = preprocess_listing(listing)
+    except Exception as e:
+        logging.error(f"預處理失敗: {e}")
+        return None
     
     # 轉成 DataFrame
     data = pd.DataFrame([processed_listing])
-    dmatrix = xgb.DMatrix(data)
 
-    # 預測結果
-    predicted_price = model.predict(dmatrix)
-    return predicted_price
+    try:
+        # 預測結果
+        predicted_cp_value = model.predict(data)
+        return predicted_cp_value
+    except Exception as e:
+        logging.error(f"模型預測失敗: {e}")
+        return None
