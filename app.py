@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from model.map_func import generate_map
 from model.db_handler import *
 from model.CP_estimate import predict_cp_value, load_label_encoders
-from model.xgb import predict_price
+from model.xgb import predict_cp_value
 import pandas as pd
 import os
 from model.CP_estimate import predict_cp_value, load_label_encoders
