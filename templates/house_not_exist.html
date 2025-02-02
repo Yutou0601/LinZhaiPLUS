@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房屋不存在</title>
+    <style>
+        /* 漸層背景 */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #ffd1dc, #a8d5f2);
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+        }
+
+        /* 卡片樣式 */
+        .container {
+            text-align: center;
+            padding: 20px 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        /* 標題樣式 */
+        .container h1 {
+            font-size: 2.5rem;
+            color: #ff6f91;
+            margin-bottom: 10px;
+        }
+
+        /* 文字樣式 */
+        .container p {
+            font-size: 1.2rem;
+            color: #5f7caf;
+        }
+
+        /* 按鈕樣式 */
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: white;
+            background: #ff6f91;
+            border: none;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #ff8fa3;
+        }
+
+        /* 浮動動畫 */
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>房屋不存在</h1>
+        <p>哎呀！這個房屋資料不存在或已被移除。</p>
+        <a href="/" class="btn">返回首頁</a>
+    </div>
+</body>
+</html>

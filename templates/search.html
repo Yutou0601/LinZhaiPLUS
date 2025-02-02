@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 租屋搜尋 </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='browse_style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='search_style.css') }}">
+
+    <link rel="icon" href="{{ url_for('static', filename='home/favicon.icon') }}">
+    
+</head>
+ 
+ 
+<body>
+    {% include 'layout/header.html' %}
+    <dev class="form">
+        <form action="/search" method="POST">
+            <input type="search" name="query" placeholder="搜尋內容"  autocomplete="off"  value="{{ query or '' }}">
+            <button type="submit">搜尋</button>
+        </form>
+    </dev>
+    <!-- 搜尋結果 -->
+    {% if listings %}
+    <main>
+        <div class="cards">
+            {% for listing in listings %}
+            <div class="card">
+                <div class="card-image">
+                    <img src="{{ url_for('static', filename='images/' + listing['image']) }}" alt="房屋圖片" loading="lazy">
+                </div>
+                <div class="card-content">
+                    <h3>{{ listing['title'] }}</h3>
+                    <p>{{ listing['description'] }}</p>
+                    <p class="rent">租金：{{ listing['price'] }} 元/月</p>
+                    <a href="{{ url_for('detail', id=listing['id']) }}">查看詳情</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+    {% else %}
+    <p class="no-results"></p>
+    {% endif %}
+
+    {% include 'layout/footer.html' %}
+</body>
+</html>

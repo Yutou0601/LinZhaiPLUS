@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>租屋瀏覽</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='browse_style.css') }}">
+</head>
+<body>
+    {% include 'layout/header.html' %}
+
+    <main>
+        <!-- 篩選表單 -->
+        <form method="POST" class="filter-form">
+            <div class="filter-group">
+                <label for="type">房屋類型：</label>
+                <select name="type" id="type">
+                    <option value="">全部</option>
+                    {% for type in types %}
+                    <option value="{{ type }}" {% if filter_type == type %}selected{% endif %}>{{ type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="city">城市：</label>
+                <select name="city" id="city">
+                    <option value="">全部</option>
+                    {% for city in cities %}
+                    <option value="{{ city }}" {% if filter_city == city %}selected{% endif %}>{{ city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="min_rent">最低租金：</label>
+                <input type="number" name="min_rent" id="min_rent" value="{{ min_rent or '' }}" placeholder="例如：5000">
+            </div>
+
+            <div class="filter-group">
+                <label for="max_rent">最高租金：</label>
+                <input type="number" name="max_rent" id="max_rent" value="{{ max_rent or '' }}" placeholder="例如：20000">
+            </div>
+
+            <button type="submit" class="filter-submit">篩選</button>
+        </form>
+
+      
+        <div class="cards">
+            {% for listing in listings %}
+            <div class="card">
+                <div class="card-image">
+                    <img src="{{ url_for('static', filename='images/' + listing['image']) }}" alt="房屋圖片" loading="lazy">
+                </div>
+
+                <div class="card-content">
+                    <h3>{{ listing['title'] }}</h3>
+                    <p>{{ listing['description'] }}</p>
+                    <p class="rent">租金：{{ listing['price'] }} 元/月</p>
+                    <a href="{{ url_for('detail', id=listing['id']) }}">查看詳情</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    {% include 'layout/footer.html' %}
+</body>
+</html>
